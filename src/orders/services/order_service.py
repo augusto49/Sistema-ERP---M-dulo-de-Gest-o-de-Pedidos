@@ -161,11 +161,12 @@ class OrderService:
         return order
 
     def list_orders(
-        self, filters: dict = None, page: int = 1, page_size: int = 20
+        self, filters: dict = None, page: int = 1, page_size: int = 20,
+        ordering: str = None,
     ) -> tuple[list[OrderEntity], int]:
-        """Lista pedidos com filtros e paginação."""
+        """Lista pedidos com filtros, ordenação e paginação."""
         return self.order_repository.list_all(
-            filters=filters, page=page, page_size=page_size
+            filters=filters, page=page, page_size=page_size, ordering=ordering
         )
 
     def list_orders_by_customer(
@@ -270,4 +271,9 @@ class OrderService:
         if deleted:
             logger.info("order_deleted", order_id=order_id)
         return deleted
+
+    def get_order_history(self, order_id: int) -> list[dict]:
+        """Retorna o histórico de transições de status de um pedido."""
+        self.get_order(order_id)  # Valida que o pedido existe
+        return self.order_repository.get_history(order_id)
 

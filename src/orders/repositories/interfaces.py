@@ -20,9 +20,10 @@ class IOrderRepository(ABC):
 
     @abstractmethod
     def list_all(
-        self, filters: Optional[dict] = None, page: int = 1, page_size: int = 20
+        self, filters: Optional[dict] = None, page: int = 1, page_size: int = 20,
+        ordering: Optional[str] = None,
     ) -> tuple[list[OrderEntity], int]:
-        """Lista pedidos com filtros e paginação."""
+        """Lista pedidos com filtros, ordenação e paginação."""
         ...
 
     @abstractmethod
@@ -45,4 +46,9 @@ class IOrderRepository(ABC):
     @abstractmethod
     def soft_delete(self, order_id: int) -> bool:
         """Exclusão lógica de um pedido."""
+        ...
+
+    @abstractmethod
+    def get_history(self, order_id: int) -> list[dict]:
+        """Retorna o histórico de transições de status de um pedido."""
         ...

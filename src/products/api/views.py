@@ -15,6 +15,9 @@ from products.api.serializers import (
 from products.repositories.product_repository import ProductRepository
 from products.services.product_service import ProductService
 
+# Campos válidos para ordenação de produtos
+ALLOWED_PRODUCT_FIELDS = {"name", "-name", "price", "-price", "stock_quantity", "-stock_quantity", "created_at", "-created_at"}
+
 
 def _get_service() -> ProductService:
     return ProductService(repository=ProductRepository())
@@ -34,6 +37,7 @@ class ProductViewSet(ViewSet):
     """
 
     def list(self, request):
+        """Lista produtos com filtros, ordenação e paginação."""
         service = _get_service()
         filters = {}
 
@@ -47,8 +51,12 @@ class ProductViewSet(ViewSet):
         page = int(request.query_params.get("page", 1))
         page_size = int(request.query_params.get("page_size", 20))
 
+        ordering = request.query_params.get("ordering")
+        if ordering and ordering not in ALLOWED_PRODUCT_FIELDS:
+            ordering = None
+
         products, total = service.list_products(
-            filters=filters, page=page, page_size=page_size
+            filters=filters, page=page, page_size=page_size, ordering=ordering
         )
 
         serializer = ProductOutputSerializer(products, many=True)

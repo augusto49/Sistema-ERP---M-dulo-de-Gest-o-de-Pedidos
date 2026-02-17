@@ -34,9 +34,10 @@ class IProductRepository(ABC):
 
     @abstractmethod
     def list_all(
-        self, filters: Optional[dict] = None, page: int = 1, page_size: int = 20
+        self, filters: Optional[dict] = None, page: int = 1, page_size: int = 20,
+        ordering: Optional[str] = None,
     ) -> tuple[list[ProductEntity], int]:
-        """Lista produtos com filtros e paginação."""
+        """Lista produtos com filtros, ordenação e paginação."""
         ...
 
     @abstractmethod

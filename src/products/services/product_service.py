@@ -61,10 +61,13 @@ class ProductService:
         return product
 
     def list_products(
-        self, filters: dict = None, page: int = 1, page_size: int = 20
+        self, filters: dict = None, page: int = 1, page_size: int = 20,
+        ordering: str = None,
     ) -> tuple[list[ProductEntity], int]:
-        """Lista produtos com filtros e paginação."""
-        return self.repository.list_all(filters=filters, page=page, page_size=page_size)
+        """Lista produtos com filtros, ordenação e paginação."""
+        return self.repository.list_all(
+            filters=filters, page=page, page_size=page_size, ordering=ordering
+        )
 
     def update_product(self, product_id: int, data: dict) -> ProductEntity:
         """

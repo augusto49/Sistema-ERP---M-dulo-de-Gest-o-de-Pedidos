@@ -12,6 +12,9 @@ from customers.api.serializers import CustomerInputSerializer, CustomerOutputSer
 from customers.repositories.customer_repository import CustomerRepository
 from customers.services.customer_service import CustomerService
 
+# Campos válidos para ordenação de clientes
+ALLOWED_CUSTOMER_FIELDS = {"name", "-name", "email", "-email", "created_at", "-created_at"}
+
 
 def _get_service() -> CustomerService:
     """Factory para instanciar o service com suas dependências."""
@@ -31,7 +34,7 @@ class CustomerViewSet(ViewSet):
     """
 
     def list(self, request):
-        """Lista clientes com filtros e paginação."""
+        """Lista clientes com filtros, ordenação e paginação."""
         service = _get_service()
         filters = {}
 
@@ -45,8 +48,12 @@ class CustomerViewSet(ViewSet):
         page = int(request.query_params.get("page", 1))
         page_size = int(request.query_params.get("page_size", 20))
 
+        ordering = request.query_params.get("ordering")
+        if ordering and ordering not in ALLOWED_CUSTOMER_FIELDS:
+            ordering = None
+
         customers, total = service.list_customers(
-            filters=filters, page=page, page_size=page_size
+            filters=filters, page=page, page_size=page_size, ordering=ordering
         )
 
         serializer = CustomerOutputSerializer(customers, many=True)

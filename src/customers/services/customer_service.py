@@ -72,10 +72,13 @@ class CustomerService:
         return customer
 
     def list_customers(
-        self, filters: dict = None, page: int = 1, page_size: int = 20
+        self, filters: dict = None, page: int = 1, page_size: int = 20,
+        ordering: str = None,
     ) -> tuple[list[CustomerEntity], int]:
-        """Lista clientes com filtros e paginação."""
-        return self.repository.list_all(filters=filters, page=page, page_size=page_size)
+        """Lista clientes com filtros, ordenação e paginação."""
+        return self.repository.list_all(
+            filters=filters, page=page, page_size=page_size, ordering=ordering
+        )
 
     def update_customer(self, customer_id: int, data: dict) -> CustomerEntity:
         """

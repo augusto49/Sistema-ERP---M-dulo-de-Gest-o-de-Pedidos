@@ -11,6 +11,7 @@ from rest_framework.viewsets import ViewSet
 from customers.repositories.customer_repository import CustomerRepository
 from orders.api.serializers import (
     OrderCancelSerializer,
+    OrderHistoryOutputSerializer,
     OrderInputSerializer,
     OrderOutputSerializer,
     OrderStatusUpdateSerializer,
@@ -18,6 +19,9 @@ from orders.api.serializers import (
 from orders.repositories.order_repository import OrderRepository
 from orders.services.order_service import OrderService
 from products.repositories.product_repository import ProductRepository
+
+# Campos válidos para ordenação de pedidos
+ALLOWED_ORDER_FIELDS = {"created_at", "-created_at", "updated_at", "-updated_at", "status", "-status"}
 
 
 def _get_service() -> OrderService:
@@ -33,17 +37,18 @@ class OrderViewSet(ViewSet):
     API REST para gerenciamento de Pedidos.
 
     Endpoints:
-        GET    /api/v1/orders/                      → list
-        POST   /api/v1/orders/                      → create
-        GET    /api/v1/orders/{id}/                  → retrieve
-        DELETE /api/v1/orders/{id}/                  → destroy (soft delete)
-        PATCH  /api/v1/orders/{id}/status/           → update_status
-        POST   /api/v1/orders/{id}/cancel/           → cancel
-        GET    /api/v1/orders/customer/{customer_id}/ → by_customer
+        GET    /api/v1/orders/                       → list
+        POST   /api/v1/orders/                       → create
+        GET    /api/v1/orders/{id}/                   → retrieve
+        DELETE /api/v1/orders/{id}/                   → destroy (cancelar pedido)
+        PATCH  /api/v1/orders/{id}/status/            → update_status
+        POST   /api/v1/orders/{id}/cancel/            → cancel
+        GET    /api/v1/orders/{id}/history/            → history
+        GET    /api/v1/orders/customer/{customer_id}/  → by_customer
     """
 
     def list(self, request):
-        """Lista pedidos com filtros e paginação."""
+        """Lista pedidos com filtros, ordenação e paginação."""
         service = _get_service()
         filters = {}
 
@@ -55,8 +60,12 @@ class OrderViewSet(ViewSet):
         page = int(request.query_params.get("page", 1))
         page_size = int(request.query_params.get("page_size", 20))
 
+        ordering = request.query_params.get("ordering")
+        if ordering and ordering not in ALLOWED_ORDER_FIELDS:
+            ordering = None
+
         orders, total = service.list_orders(
-            filters=filters, page=page, page_size=page_size
+            filters=filters, page=page, page_size=page_size, ordering=ordering
         )
 
         serializer = OrderOutputSerializer(orders, many=True)
@@ -87,10 +96,19 @@ class OrderViewSet(ViewSet):
         return Response(serializer.data)
 
     def destroy(self, request, pk=None):
-        """Exclusão lógica de um pedido."""
+        """
+        Cancela um pedido e restaura o estoque.
+        Mapeado como DELETE conforme especificação do teste técnico.
+        """
         service = _get_service()
-        service.delete_order(int(pk))
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        reason = request.data.get("reason", "") if request.data else ""
+        order = service.cancel_order(
+            order_id=int(pk),
+            reason=reason,
+            changed_by=getattr(request.user, "username", None) or "anonymous",
+        )
+        output_serializer = OrderOutputSerializer(order)
+        return Response(output_serializer.data)
 
     @action(detail=True, methods=["patch"], url_path="status")
     def update_status(self, request, pk=None):
@@ -131,6 +149,14 @@ class OrderViewSet(ViewSet):
 
         output_serializer = OrderOutputSerializer(order)
         return Response(output_serializer.data)
+
+    @action(detail=True, methods=["get"], url_path="history")
+    def history(self, request, pk=None):
+        """Retorna o histórico de transições de status de um pedido."""
+        service = _get_service()
+        history = service.get_order_history(int(pk))
+        serializer = OrderHistoryOutputSerializer(history, many=True)
+        return Response(serializer.data)
 
     @action(detail=False, methods=["get"], url_path=r"customer/(?P<customer_id>\d+)")
     def by_customer(self, request, customer_id=None):

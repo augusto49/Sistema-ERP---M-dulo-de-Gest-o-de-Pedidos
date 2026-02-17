@@ -79,3 +79,15 @@ class OrderOutputSerializer(serializers.Serializer):
         if hasattr(obj.status, "value"):
             return obj.status.value
         return str(obj.status)
+
+
+class OrderHistoryOutputSerializer(serializers.Serializer):
+    """DTO de saída para histórico de status do pedido."""
+
+    id = serializers.IntegerField(read_only=True)
+    order_id = serializers.IntegerField(read_only=True)
+    from_status = serializers.CharField(read_only=True)
+    to_status = serializers.CharField(read_only=True)
+    changed_at = serializers.DateTimeField(read_only=True)
+    changed_by = serializers.CharField(read_only=True)
+    notes = serializers.CharField(read_only=True)

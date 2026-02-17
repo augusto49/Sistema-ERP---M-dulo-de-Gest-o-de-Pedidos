@@ -57,7 +57,8 @@ class CustomerRepository(ICustomerRepository):
             return None
 
     def list_all(
-        self, filters: Optional[dict] = None, page: int = 1, page_size: int = 20
+        self, filters: Optional[dict] = None, page: int = 1, page_size: int = 20,
+        ordering: Optional[str] = None,
     ) -> tuple[list[CustomerEntity], int]:
         queryset = self._get_active_queryset()
 
@@ -68,6 +69,9 @@ class CustomerRepository(ICustomerRepository):
                 queryset = queryset.filter(email__icontains=filters["email"])
             if "is_active" in filters:
                 queryset = queryset.filter(is_active=filters["is_active"])
+
+        if ordering:
+            queryset = queryset.order_by(ordering)
 
         total = queryset.count()
         offset = (page - 1) * page_size

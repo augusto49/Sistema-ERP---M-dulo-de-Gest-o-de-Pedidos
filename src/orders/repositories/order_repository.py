@@ -58,7 +58,8 @@ class OrderRepository(IOrderRepository):
             return None
 
     def list_all(
-        self, filters: Optional[dict] = None, page: int = 1, page_size: int = 20
+        self, filters: Optional[dict] = None, page: int = 1, page_size: int = 20,
+        ordering: Optional[str] = None,
     ) -> tuple[list[OrderEntity], int]:
         queryset = self._get_active_queryset().prefetch_related("items")
 
@@ -71,6 +72,9 @@ class OrderRepository(IOrderRepository):
                 queryset = queryset.filter(created_at__gte=filters["date_from"])
             if "date_to" in filters:
                 queryset = queryset.filter(created_at__lte=filters["date_to"])
+
+        if ordering:
+            queryset = queryset.order_by(ordering)
 
         total = queryset.count()
         offset = (page - 1) * page_size
@@ -136,3 +140,19 @@ class OrderRepository(IOrderRepository):
             id=order_id, deleted_at__isnull=True
         ).update(deleted_at=datetime.now())
         return updated > 0
+
+    def get_history(self, order_id: int) -> list[dict]:
+        """Retorna o histórico de transições de status de um pedido."""
+        history_qs = OrderHistory.objects.filter(order_id=order_id).order_by("changed_at")
+        return [
+            {
+                "id": h.id,
+                "order_id": h.order_id,
+                "from_status": h.from_status,
+                "to_status": h.to_status,
+                "changed_at": h.changed_at,
+                "changed_by": h.changed_by,
+                "notes": h.notes,
+            }
+            for h in history_qs
+        ]

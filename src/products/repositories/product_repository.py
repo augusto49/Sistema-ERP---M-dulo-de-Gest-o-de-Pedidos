@@ -63,7 +63,8 @@ class ProductRepository(IProductRepository):
         return [self._to_entity(m) for m in models]
 
     def list_all(
-        self, filters: Optional[dict] = None, page: int = 1, page_size: int = 20
+        self, filters: Optional[dict] = None, page: int = 1, page_size: int = 20,
+        ordering: Optional[str] = None,
     ) -> tuple[list[ProductEntity], int]:
         queryset = self._get_active_queryset()
 
@@ -74,6 +75,9 @@ class ProductRepository(IProductRepository):
                 queryset = queryset.filter(sku__icontains=filters["sku"])
             if "is_active" in filters:
                 queryset = queryset.filter(is_active=filters["is_active"])
+
+        if ordering:
+            queryset = queryset.order_by(ordering)
 
         total = queryset.count()
         offset = (page - 1) * page_size
