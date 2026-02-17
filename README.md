@@ -164,6 +164,47 @@ tests/
     └── test_atomic_partial_failure.py
 ```
 
+### Cenários de Teste Críticos
+
+#### 6.1 Concorrência de Estoque
+
+> **Cenário**: Produto com 10 unidades. Dois pedidos simultâneos tentam comprar 8 unidades cada.
+>
+> **Resultado esperado**: Apenas um pedido é aceito. O outro falha com erro de estoque insuficiente.
+
+- **Arquivo**: `tests/test_api/test_stock_concurrency.py`
+- **Técnica**: Requisições paralelas com `ThreadPoolExecutor`
+
+```bash
+pytest tests/test_api/test_stock_concurrency.py -v
+```
+
+#### 6.2 Idempotência
+
+> **Cenário**: Cliente envia a mesma requisição 3 vezes (simula retry após timeout) com o mesmo `Idempotency-Key`.
+>
+> **Resultado esperado**: Apenas um pedido é criado. As requisições duplicadas retornam o mesmo pedido.
+
+- **Arquivo**: `tests/test_api/test_idempotency.py`
+- **Técnica**: 3 POST requests idênticos com mesmo header `Idempotency-Key`
+
+```bash
+pytest tests/test_api/test_idempotency.py -v
+```
+
+#### 6.3 Atomicidade em Falha Parcial
+
+> **Cenário**: Pedido com 3 itens. Itens 1 e 2 têm estoque, item 3 não tem.
+>
+> **Resultado esperado**: O pedido falha completamente. Nenhum estoque é reservado (rollback atômico).
+
+- **Arquivo**: `tests/test_api/test_atomic_partial_failure.py`
+- **Técnica**: Validação de que o estoque dos itens 1 e 2 não foi alterado após a falha
+
+```bash
+pytest tests/test_api/test_atomic_partial_failure.py -v
+```
+
 ## 📁 Arquitetura
 
 ```
