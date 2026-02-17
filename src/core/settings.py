@@ -1,7 +1,3 @@
-"""
-Configurações do Django para o projeto ERP - Módulo de Gestão de Pedidos.
-"""
-
 import os
 from pathlib import Path
 
